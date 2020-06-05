@@ -4,17 +4,35 @@ let fs = require("fs");
 let cheerio = require("cheerio");
 let request = require("request");
 let bldr = new wDriver.Builder();
+let clubName=process.argv[2];
 // let driver=bldr.forBrowser("chrome").build();
 let searchArray = process.argv.slice(2);
-let pageURL = 'http://premierleague.com/tables';
+let tablePageURL = 'http://premierleague.com/tables';
+let squadPageURL= `https://www.premierleague.com/clubs/10/${clubName}/squad`
 let teamStats = {}
 
 
-request(pageURL, function (err, response, data) {
+request(tablePageURL, function (err, response, data) {
     if (err == null && response.statusCode == 200) {
         console.log("page loaded");
         console.log("loading tables..")
         makeStats(data);
+    }
+    else if (response.statusCode == 404) {
+        console.log("page not found");
+    }
+    else {
+        console.log(err.message);
+    }
+
+
+
+})
+request(squadPageURL, function (err, response, data) {
+    if (err == null && response.statusCode == 200) {
+        console.log("page loaded");
+        console.log("loading squads..")
+        makeSquadPDF(data);
     }
     else if (response.statusCode == 404) {
         console.log("page not found");
@@ -44,4 +62,14 @@ function makeStats(data) {
         }
     }
     console.table(teamStats);
+}
+
+
+function makeSquadPDF(data){
+    let $=cheerio.load(data);
+    let squadArray=$(".squadListContainer.squadList.block-list-4.block-list-3-m.block-list-2-s.block-list-padding> li");
+    for(let i=0;i<squadArray.length;i++){
+        let playerInfo=$($(squadArray[i]).find(".playerCardInfo")).text();
+        console.log(playerInfo);
+    }
 }
