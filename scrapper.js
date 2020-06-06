@@ -64,12 +64,28 @@ function makeStats(data) {
     console.table(teamStats);
 }
 
+let playersArr=[];
+
 
 function makeSquadPDF(data){
     let $=cheerio.load(data);
     let squadArray=$(".squadListContainer.squadList.block-list-4.block-list-3-m.block-list-2-s.block-list-padding> li");
     for(let i=0;i<squadArray.length;i++){
-        let playerInfo=$($(squadArray[i]).find(".playerCardInfo")).text();
-        console.log(playerInfo);
+        let playerInfo=$(squadArray[i]).find(".playerCardInfo");
+        let name = $($(playerInfo).find(".name")).text();
+        let kitno = $($(playerInfo).find(".number")).text();
+        let position = $($(playerInfo).find(".position")).text();
+
+        let playerObj={
+            'Name' : name,
+            'Kit Number':kitno,
+            'Position' : position
+
+        }
+
+        playersArr.push(playerObj);
+
+
     }
+    console.table(playersArr)
 }
