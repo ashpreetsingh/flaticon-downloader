@@ -63,6 +63,7 @@ function makeStats(data) {
     }
     console.table(teamStats);
 }
+let final = '<html><body><table border="2" width="50%" style=" font-size: 2rem; margin: auto; text-align: center;"><thead><tr><th>Name</th><th>Kit Number</th><th>Position</th></tr></thead>'
 
 let playersArr=[];
 
@@ -75,6 +76,10 @@ function makeSquadPDF(data){
         let name = $($(playerInfo).find(".name")).text();
         let kitno = $($(playerInfo).find(".number")).text();
         let position = $($(playerInfo).find(".position")).text();
+        final += `<tr><td>${name}</td>
+        <td>${kitno}</td>
+        <td>${position}</td></tr>`
+
 
         let playerObj={
             'Name' : name,
@@ -82,10 +87,12 @@ function makeSquadPDF(data){
             'Position' : position
 
         }
-
-        playersArr.push(playerObj);
+        
+        // playersArr.push(playerObj);
 
 
     }
-    console.table(playersArr)
+    final+='</table></body></html>'
+    // console.table(playersArr)
+    fs.writeFileSync("players.html",final);
 }
