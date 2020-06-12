@@ -1,47 +1,49 @@
 let fs = require("fs");
 let cheerio = require("cheerio");
-let request = require("request");
+// let request = require("request");
+let axios = require("axios");
+
 let clubName = process.argv[2];
 let tablePageURL = 'http://premierleague.com/tables';
-let squadPageURL = `https://www.premierleague.com/clubs/10/${clubName}/squad`
-let teamStats = {}
-let final = `<html><body><h1 style="text-align:center">Your Team : ${clubName}</h1>`
+let squadPageURL = `https://www.premierleague.com/clubs/10/${clubName}/squad`;
+let fixturesPageURL = `https://www.premierleague.com/fixtures`;
+// let teamStats = {}
+let final = `<html><body><h1 style="text-align:center">Your Team : ${clubName}</h1>`;
+let pdf=require("html-pdf");
+var options={format:'Letter'};
 
-request(tablePageURL, function (err, response, data) {
-    if (err == null && response.statusCode == 200) {
-        console.log("page loaded");
-        console.log("loading tables..")
-        makeStats(data);
+
+(async function () {
+    let tablePage = await axios.get(tablePageURL);
+    makeStats(tablePage.data);
+    let squadsPage = await axios.get(squadPageURL);
+    makeSquadPDF(squadsPage.data);
+    
+    
+    
+
+})();
+
+
+function getFixture(data) {
+    let $ = cheerio.load(data);
+    final += '<ul>';
+    console.log("page loaded...")
+    console.log("getting fixtures");
+    // console.log($(".team.js-team").text());
+    let upComingFixtures = $(".overview");
+    console.log(upComingFixtures.length);
+    for (let i = 0; i < upComingFixtures.length; i++) {
+        let fixtureData = $($($(upComingFixtures[i]).find("li.matchFixtureContainer")).attr("data-home")).text();
+        console.log(fixtureData);
+        final += `<li><h3>${fixtureData}</h3></li>`
     }
-    else if (response.statusCode == 404) {
-        console.log("page not found");
-    }
-    else {
-        console.log(err.message);
-    }
-
-
-
-})
-request(squadPageURL, function (err, response, data) {
-    if (err == null && response.statusCode == 200) {
-        console.log("page loaded");
-        console.log("loading squads..")
-        makeSquadPDF(data);
-    }
-    else if (response.statusCode == 404) {
-        console.log("page not found");
-    }
-    else {
-        console.log(err.message);
-    }
-
-
-
-})
-
+    final += '</ul>'
+}
 
 function makeStats(data) {
+    console.log("page loaded...");
+    console.log("getting table stats");
     let $ = cheerio.load(data);
     let arrOfTeams = $("tr[data-compseason='274']");
     for (let i = 0; i < 20; i++) {
@@ -56,20 +58,21 @@ function makeStats(data) {
             console.log("table stats written");
         }
     }
-    final += '</table></body></html>'
-    // console.table(playersArr)
-    fs.writeFileSync("players.html", final);
+
 
     // console.table(teamStats);
 }
-final += '<table border="2" width="50%" style=" font-size: 2rem; margin: auto; text-align: center;"><thead><tr><th>Name</th><th>Kit Number</th><th>Position</th></tr></thead>'
 
 
 
 
 function makeSquadPDF(data) {
+    console.log("squads page loaded...");
+    console.log("getting squads data");
     let $ = cheerio.load(data);
     let squadArray = $(".squadListContainer.squadList.block-list-4.block-list-3-m.block-list-2-s.block-list-padding> li");
+    final += '<table border="2" width="50%" style=" font-size: 1rem; margin: auto; text-align: center;"><thead><tr><th>Name</th><th>Kit Number</th><th>Position</th></tr></thead>'
+
     for (let i = 0; i < squadArray.length; i++) {
         let playerInfo = $(squadArray[i]).find(".playerCardInfo");
         let name = $($(playerInfo).find(".name")).text();
@@ -79,5 +82,15 @@ function makeSquadPDF(data) {
         <td>${kitno}</td>
         <td>${position}</td></tr>`
     }
+    final += '</table></body></html>'
+    // console.table(playersArr)
+    fs.writeFileSync("Teaminfo.html", final);
+    let html=fs.readFileSync("Teaminfo.html",'utf-8');
+    pdf.create(html,options).toFile('Teaminfo.pdf',function(err,resp){
+        if(err){
+            console.log(err);
+        }
+        
+    })
 
 }
